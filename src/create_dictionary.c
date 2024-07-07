@@ -13,6 +13,7 @@ int create_dictionary(){
 	// TODO gestire varie grandezze files
 	code = malloc(sizecode);
 	char words_array[sizecode][sizecode];
+	// char next_word_array[sizecode][sizecode][sizecode];
 	int words = 0;
 
 	/*	Each phrase is terminated by . ? ! or EOF 
@@ -31,10 +32,12 @@ int create_dictionary(){
 			continue;
 		}
 		if(c=='?' || c=='!' || c=='.'){
-			for(int i=0;i<n;i++){
-				words_array[words][i] = code[i];
+			if(n>0){
+				for(int i=0;i<n;i++){
+					words_array[words][i] = code[i];
+				}
+				words++;
 			}
-			words++;
 			words_array[words][0] = c;
 			words++;
 			n=0;
