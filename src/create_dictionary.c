@@ -6,11 +6,17 @@ struct dictionary_info{
 	int total_words;
 };
 
-struct dictionary_info scan_words(char * filename){
+struct dictionary_info scan_words(const char * filename){
 	struct dictionary_info di;
 	int c;
 	int n=0;
-	FILE *file = fopen(filename, "r");
+	FILE *file;
+	// check if filename is ok
+	printf("%s\n",filename);
+	if ((file=fopen(filename,"r"))==NULL) {
+		printf("Wrong input file name\n");
+		exit(1);
+	}
 	int max_word_length = 0;
 	int total_words = 0;
 	if (file == NULL){
@@ -92,7 +98,7 @@ int initialize_to(int* a, int count, int n){
 	return 0;
 }
 
-int create_dictionary(char * filename){
+int create_dictionary(const char * filename){
 	/*	Each phrase is terminated by . ? ! or EOF 
 	 *	. ? and ! are words
 	 *	every other character sequence between spaces and/or . ? ! is a word
