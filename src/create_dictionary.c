@@ -161,10 +161,12 @@ int create_dictionary(char * filename){
 		char words_array_unique[total_words][max_word_length+1];
 		// counter for the unique words
 		int u=0;
+		// foreach word in the text
 		for(int i=0;i<words;i++){
 			// printf("%s - %d\n",words_array[i],i);
 			// flag to check if the word is already present in words_array_unique
 			int already_seen_word=0;
+			// foreach previous word in the text 
 			for(int j=0;j<i;j++){
 				// printf("i = %d | j = %d\n",i,j);
 				already_seen_word = compare_words(words_array[i],words_array[j]);
@@ -179,12 +181,14 @@ int create_dictionary(char * filename){
 			// if write_unique_word is 0 means that this is a unique word so far
 			if(already_seen_word==0){
 				int z=0;
+				// so we copy it in the unique array
 				do{
 					words_array_unique[u][z]=words_array[i][z];
 					z++;
 				}while(words_array[i][z]!='\0');
 				words_array_unique[u][z++]='\0';
 				// printf("%s - u=%d\n",words_array_unique[u],u);
+				// and increment the counter of the unique words
 				u++;
 			}
 		}
@@ -193,44 +197,52 @@ int create_dictionary(char * filename){
 		// at this point words_array_unique will contain u words
 		// nw will contain the indexes of the next words for the words contained in words_array_unique
 		int nw[total_words][total_words+1];
+		// counter for the next words
 		int nw_count[total_words];
 		initialize_to(nw_count,total_words,0);
-		int equal=0;
-		int next_index;
 		// for each unique word
 		for(int i=0;i<u;i++){
 			// for each word in the text
 			for(int j=0;j<total_words;j++){
-				// index for the next word in the text
-				next_index = j+1;
-				if(next_index==total_words){
-					// the last word has the first as "next"
-					next_index=0;
-				}
-				// now we must find the correct index in the unique array
-				for(int z=0;z<u;z++){
-					int eq = compare_words(words_array_unique[z],words_array[next_index]);
-					if(eq>0){
-						next_index=z;
-						break;
-					}
-				}
-				equal = compare_words(words_array_unique[i],words_array[j]);
+				// if the unique_word i = word j, we look for the next word
+				int equal = compare_words(words_array_unique[i],words_array[j]);
 				if(equal>0){
+					// index for the next word in the text
+					int next_index = j+1;
+					if(next_index==total_words){
+						// the last word has the first as "next"
+						next_index=0;
+					}
+					// now we must find the correct index in the unique array
+					// so we search the word j in the unique words
+					for(int z=0;z<u;z++){
+						int eq = compare_words(words_array_unique[z],words_array[next_index]);
+						if(eq>0){
+							next_index=z;
+							break;
+						}
+					}
+					// now we add the index to nw and adjust the counter
 					nw[i][ nw_count[i] ] = next_index;
 					nw_count[i]++;
 				}
 			}
 		}
+
+		// ############ 4. Compute frequences
+		// we need to have unique next words
       		int nw_unique[total_words][total_words+1];
+		// so we can have for each next word its frequence
 		int nw_frequence[total_words][total_words+1];
+		// counter for the unique next words
 		int nw_unique_count[total_words];
 		initialize_to(nw_unique_count,total_words,0);
+		
 		// for each unique word
 		for(int i=0;i<u;i++){
 			// for each next word of the unique word i
 			for(int j=0;j<nw_count[i];j++){
-				nw_frequence[i][j]=1;
+				// nw_frequence[i][j]=1;
 				// for each unique next word
 				int new_next_word=1;
 				for(int k=0;k<nw_unique_count[i];k++){
@@ -251,13 +263,6 @@ int create_dictionary(char * filename){
 			}
 			printf("\n");
 		}
-		// x : 100 = occurrence_of_a_word : number_of_next_words
-		// x : 100 = nw_occ : nw_count[i]
-		/* int nw_occ = 1;
-					for(int a=0;a<nw_count[i]++;a++){
-						if(nw[i][a] == nw[i][ nw_count[i] ]){
-						}
-					} */
 	}
 	return 0;
 }
