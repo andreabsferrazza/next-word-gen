@@ -257,12 +257,29 @@ int create_dictionary(char * filename){
 					nw_unique_count[i]++;
 				}
 			}
-			printf("Indice: %d - Parola: %s - Count: %d - Next: ",i,words_array_unique[i],nw_count[i]);
+			/* printf("Indice: %d - Parola: %s - Count: %d - Next: ",i,words_array_unique[i],nw_count[i]);
 			for(int a=0;a<nw_unique_count[i];a++){
 				printf("%s : %d,",words_array_unique[ nw_unique[i][a] ],nw_frequence[i][a]);
 			}
-			printf("\n");
+			printf("\n"); */
 		}
+
+		char* filename_out = "output.txt";
+		FILE *fpout;
+		if ((fpout=fopen(filename_out,"wt"))==NULL) {
+			printf("Wrong output file name");
+			exit(1);
+		}
+
+		for(int i=0;i<u;i++){
+			fprintf(fpout,"%s,",words_array_unique[i]);
+			for(int a=0;a<nw_unique_count[i];a++){
+				float perc=(float) nw_frequence[i][a]/ (float) nw_count[i];
+				fprintf(fpout,"%s,%.4g,",words_array_unique[ nw_unique[i][a] ],perc);
+			}
+			fprintf(fpout,"\n");
+		}
+		fclose(fpout);
 	}
 	return 0;
 }
