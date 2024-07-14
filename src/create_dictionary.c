@@ -60,6 +60,37 @@ struct dictionary_info scan_words(char * filename){
 	return di;
 }
 
+/*
+ * This function compares two strings a and b (input)
+ * a and b must be terminated with the character \0
+ * OUTPUT
+ * 0 if a and b are different
+ * >0 if a and b are equal
+ * */
+int compare_words(char* a, char* b){
+	int z=0, check=0;
+	// if at least one character is different the word is different
+	while(a[z]!='\0' && b[z]!='\0'){
+		if(a[z]!=b[z]){
+			check=0;
+			break;
+		}
+		// printf("%d : %c - %d : %c\n",i,a[z],j,b[z]);
+		check++;
+		z++;
+	}
+	return check;
+}
+/*
+ * This function initialize to an int n all the elements of the array a
+ * */
+int initialize_to(int* a, int count, int n){
+	for(int i=0;i<count;i++){
+		a[i]=n;
+	}
+	return 0;
+}
+
 int create_dictionary(char * filename){
 	/*	Each phrase is terminated by . ? ! or EOF 
 	 *	. ? and ! are words
@@ -68,91 +99,132 @@ int create_dictionary(char * filename){
 	 *	all other characters are ignored except for a-zA-Z'
 	 * */
 	// TODO può contenere numeri?
-	// Determines max_word_length and total_words
 
 	struct dictionary_info di;
 	int c;
 	di = scan_words(filename);
 
 	if(di.total_words>0 && di.max_word_length>0){
-		int total_words = di.total_words;
-		int max_word_length = di.max_word_length;
-		printf("Found %d words | %d maxlength of a word.\n",total_words,max_word_length);
-		// char* current_string;
-		// current_string = malloc( max_word_length * sizeof(char) );
-		// char* words_array[total_words+1];
-		char words_array[total_words][max_word_length+1];
-		char words_array_unique[total_words][max_word_length+1];
-		int words = 0, n=0;
-		// printf("%d\n",words);
+		
+		// ############ 1. Getting all the words
 		FILE *file_catcher = fopen(filename, "r");
+		int total_words = di.total_words; // computed number of words
+		int max_word_length = di.max_word_length; // max length possible of a word
+		printf("Found %d words | %d maxlength of a word.\n",total_words,max_word_length);
+		// array for the words in the text 
+		// we add +1 to the max_word_length because we use '\0' as string last character
+		char words_array[total_words][max_word_length+1];
+		// each unique word in the text
+		char words_array_unique[total_words][max_word_length+1];
+		// words is the counter for the words, n for the letters in a word
+		int words=0, n=0;
 		do{
+			// we scan each character of the file until the end of the file (EOF)
 			c=fgetc(file_catcher);
+			// if n>0 means that we have taken already a word
+			// so we terminate it with \0, we set n=0 for the next word and words++
+			// and we skip to the next iteration of the while
 			if(n>0 && (c==' ' || c==EOF)){
-				/* for(int i=0;i<n;i++){
-					printf("%c\n",current_string[i]);
-					words_array[words][i] = current_string[i];
-					printf("%c\n",words_array[words][i]);
-					printf("%s\n",words_array[words]);
-				} */
 				words_array[words][n++] = '\0';
 				words++;
 				n=0;
 				continue;
 			}
+			// if we found one of ?!. we must consider it as a word
 			if(c=='?' || c=='!' || c=='.'){
+				// if we were already writing a word we must terminate it and adjust the counters
 				if(n>0){
-					/* for(int i=0;i<n;i++){
-						words_array[words][i] = current_string[i];
-					} */
 					words_array[words][n++] = '\0';
 					words++;
 					n=0;
 				}
+				// now we put the character in
+				// we adjust the counters and skip to the next iteration of the while
 				words_array[words][n++] = c;
 				words_array[words][n++] = '\0';
 				words++;
 				n=0;
 				continue;
 			}
+			// if c is a "valid" character we put it in the words_array
 			if( (c>='a' && c<='z') || (c>='A' && c<='Z') || c=='\''){
+				// we consider all the upper case letters as lowercase
+				if(c>='A' && c<='Z'){
+					c+=32;
+				}
 				words_array[words][n++] = (char) c;
 			}
 		}while (c != EOF);
+		fclose(file_catcher);
 
-		// words_array
+		// ############ 2. Identifying all unique words 
 		int z,check;
+		// multidimensional array of words index 
 		int u=0;
 		for(int i=0;i<words;i++){
-			// printf("%s - %d\n",words_array[i],i);
+			printf("%s - %d\n",words_array[i],i);
 			check=0;
 			for(int j=0;j<i;j++){
-				z=0;
-				while(words_array[i][z]!='\0' && words_array[j][z]!='\0'){
-					if(words_array[i][z]!=words_array[j][z]){
-						check=0;
-						break;
-					}
-					// printf("%d : %c - %d : %c\n",i,words_array[i][z],j,words_array[j][z]);
-					check++;
-					z++;
-				}
+				// printf("i = %d | j = %d\n",i,j);
+				check = compare_words(words_array[i],words_array[j]);
+				// if check>0 we found that word i = word j
 				if(check>0){
+					// check==0 means different
 					break;
 				}
 			}
+
+			// if write_unique_word is 0 means that this is a unique word so far
 			if(check==0){
 				z=0;
-				u++;
 				do{
 					words_array_unique[u][z]=words_array[i][z];
 					z++;
 				}while(words_array[i][z]!='\0');
 				words_array_unique[u][z++]='\0';
-				printf("%s\n",words_array_unique[u]);
+				// printf("%s - u=%d\n",words_array_unique[u],u);
+				u++;
 			}
+			// else j and u are equal
+
+			// printf("%s - next\n",words_array[next_index]);
 		}
-		fclose(file_catcher);
+
+		// ############ 3. Determining next words 
+		// at this point words_array_unique will contain u words
+		int next_words[total_words][total_words+1];
+		int next_words_count[total_words];
+		
+		initialize_to(next_words_count,total_words,0);
+		int equal=0;
+		int next_index;
+		for(int i=0;i<u;i++){
+			for(int j=0;j<total_words;j++){
+				// index for the next word in the text
+				next_index = j+1;
+				if(next_index==total_words){
+					next_index=0;
+				}
+				// now we must find the correct index in the unique array
+				for(int z=0;z<u;z++){
+					int eq = compare_words(words_array_unique[z],words_array[next_index]);
+					if(eq>0){
+						next_index=z;
+						break;
+					}
+				}
+				equal = compare_words(words_array_unique[i],words_array[j]);
+				if(equal>0){
+					next_words[i][ next_words_count[i] ] = next_index;
+					next_words_count[i]++;
+				}
+			}
+			printf("Indice: %d - Parola: %s - Count: %d - Next: ",i,words_array_unique[i],next_words_count[i]);
+			for(int a=0;a<next_words_count[i];a++){
+				printf("%s,",words_array_unique[ next_words[i][a] ]);
+			}
+			printf("\n");
+		}
 	}
 	return 0;
 }
