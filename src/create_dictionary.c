@@ -50,7 +50,7 @@ struct dictionary_info scan_words(char * filename){
 			continue;
 		}
 		// se il carattere corrente c è tra quelli che possono comporre una parola
-		if( (c>='a' && c<='z') || (c>='A' && c<='Z') || c=='\''){
+		if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='\''){
 			// contiamo con il contatore n il numero di lettere della parola che stiamo leggendo
 			n++;
 		}
@@ -79,6 +79,7 @@ int compare_words(char* a, char* b){
 		check++;
 		z++;
 	}
+	if(a[z]!=b[z]) check=0;
 	return check;
 }
 /*
@@ -112,16 +113,14 @@ int create_dictionary(char * filename){
 		int max_word_length = di.max_word_length; // max length possible of a word
 		printf("Found %d words | %d maxlength of a word.\n",total_words,max_word_length);
 		// array for the words in the text 
-		// we add +1 to the max_word_length because we use '\0' as string last character
+		// we add +1 to the max_word_length because we use '\0' as string's last character
 		char words_array[total_words][max_word_length+1];
-		// each unique word in the text
-		char words_array_unique[total_words][max_word_length+1];
 		// words is the counter for the words, n for the letters in a word
 		int words=0, n=0;
 		do{
 			// we scan each character of the file until the end of the file (EOF)
 			c=fgetc(file_catcher);
-			// if n>0 means that we have taken already a word
+			// if n>0 means that we have already begun to write a word
 			// so we terminate it with \0, we set n=0 for the next word and words++
 			// and we skip to the next iteration of the while
 			if(n>0 && (c==' ' || c==EOF)){
@@ -147,7 +146,7 @@ int create_dictionary(char * filename){
 				continue;
 			}
 			// if c is a "valid" character we put it in the words_array
-			if( (c>='a' && c<='z') || (c>='A' && c<='Z') || c=='\''){
+			if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='\''){
 				// we consider all the upper case letters as lowercase
 				if(c>='A' && c<='Z'){
 					c+=32;
@@ -158,25 +157,28 @@ int create_dictionary(char * filename){
 		fclose(file_catcher);
 
 		// ############ 2. Identifying all unique words 
-		int z,check;
-		// multidimensional array of words index 
+		// each unique word in the text
+		char words_array_unique[total_words][max_word_length+1];
+		// counter for the unique words
 		int u=0;
 		for(int i=0;i<words;i++){
-			printf("%s - %d\n",words_array[i],i);
-			check=0;
+			// printf("%s - %d\n",words_array[i],i);
+			// flag to check if the word is already present in words_array_unique
+			int already_seen_word=0;
 			for(int j=0;j<i;j++){
 				// printf("i = %d | j = %d\n",i,j);
-				check = compare_words(words_array[i],words_array[j]);
-				// if check>0 we found that word i = word j
-				if(check>0){
-					// check==0 means different
+				already_seen_word = compare_words(words_array[i],words_array[j]);
+				// if already_seen_word>0 we found that word i = word j
+				if(already_seen_word>0){
+					// printf("%s (i) %s (j)\n",words_array[i],words_array[j]);
+					// already_seen_word==0 means different
 					break;
 				}
 			}
 
 			// if write_unique_word is 0 means that this is a unique word so far
-			if(check==0){
-				z=0;
+			if(already_seen_word==0){
+				int z=0;
 				do{
 					words_array_unique[u][z]=words_array[i][z];
 					z++;
@@ -185,24 +187,24 @@ int create_dictionary(char * filename){
 				// printf("%s - u=%d\n",words_array_unique[u],u);
 				u++;
 			}
-			// else j and u are equal
-
-			// printf("%s - next\n",words_array[next_index]);
 		}
 
 		// ############ 3. Determining next words 
 		// at this point words_array_unique will contain u words
-		int next_words[total_words][total_words+1];
-		int next_words_count[total_words];
-		
-		initialize_to(next_words_count,total_words,0);
+		// nw will contain the indexes of the next words for the words contained in words_array_unique
+		int nw[total_words][total_words+1];
+		int nw_count[total_words];
+		initialize_to(nw_count,total_words,0);
 		int equal=0;
 		int next_index;
+		// for each unique word
 		for(int i=0;i<u;i++){
+			// for each word in the text
 			for(int j=0;j<total_words;j++){
 				// index for the next word in the text
 				next_index = j+1;
 				if(next_index==total_words){
+					// the last word has the first as "next"
 					next_index=0;
 				}
 				// now we must find the correct index in the unique array
@@ -215,16 +217,47 @@ int create_dictionary(char * filename){
 				}
 				equal = compare_words(words_array_unique[i],words_array[j]);
 				if(equal>0){
-					next_words[i][ next_words_count[i] ] = next_index;
-					next_words_count[i]++;
+					nw[i][ nw_count[i] ] = next_index;
+					nw_count[i]++;
 				}
 			}
-			printf("Indice: %d - Parola: %s - Count: %d - Next: ",i,words_array_unique[i],next_words_count[i]);
-			for(int a=0;a<next_words_count[i];a++){
-				printf("%s,",words_array_unique[ next_words[i][a] ]);
+		}
+      		int nw_unique[total_words][total_words+1];
+		int nw_frequence[total_words][total_words+1];
+		int nw_unique_count[total_words];
+		initialize_to(nw_unique_count,total_words,0);
+		// for each unique word
+		for(int i=0;i<u;i++){
+			// for each next word of the unique word i
+			for(int j=0;j<nw_count[i];j++){
+				nw_frequence[i][j]=1;
+				// for each unique next word
+				int new_next_word=1;
+				for(int k=0;k<nw_unique_count[i];k++){
+					if(k!=j && nw_unique[i][k]==nw[i][j]){
+						new_next_word=0;
+						nw_frequence[i][k]++; 
+					}
+				}
+				if(new_next_word==1){
+					nw_unique[i][ nw_unique_count[i] ] = nw[i][j];
+					nw_frequence[i][ nw_unique_count[i] ] = 1;
+					nw_unique_count[i]++;
+				}
+			}
+			printf("Indice: %d - Parola: %s - Count: %d - Next: ",i,words_array_unique[i],nw_count[i]);
+			for(int a=0;a<nw_unique_count[i];a++){
+				printf("%s : %d,",words_array_unique[ nw_unique[i][a] ],nw_frequence[i][a]);
 			}
 			printf("\n");
 		}
+		// x : 100 = occurrence_of_a_word : number_of_next_words
+		// x : 100 = nw_occ : nw_count[i]
+		/* int nw_occ = 1;
+					for(int a=0;a<nw_count[i]++;a++){
+						if(nw[i][a] == nw[i][ nw_count[i] ]){
+						}
+					} */
 	}
 	return 0;
 }
