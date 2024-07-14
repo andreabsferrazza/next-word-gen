@@ -63,6 +63,7 @@ struct dictionary_info scan_words(const char * filename){
 	}while (c != EOF);
 	di.max_word_length = max_word_length;
 	di.total_words= total_words;
+	fclose(file);
 	return di;
 }
 
@@ -117,7 +118,6 @@ int create_dictionary(const char * filename){
 		FILE *file_catcher = fopen(filename, "r");
 		int total_words = di.total_words; // computed number of words
 		int max_word_length = di.max_word_length; // max length possible of a word
-		printf("Found %d words | %d maxlength of a word.\n",total_words,max_word_length);
 		// array for the words in the text 
 		// we add +1 to the max_word_length because we use '\0' as string's last character
 		char words_array[total_words][max_word_length+1];
@@ -278,14 +278,15 @@ int create_dictionary(const char * filename){
 		}
 
 		for(int i=0;i<u;i++){
-			fprintf(fpout,"%s,",words_array_unique[i]);
+			fprintf(fpout,"%s",words_array_unique[i]);
 			for(int a=0;a<nw_unique_count[i];a++){
 				float perc=(float) nw_frequence[i][a]/ (float) nw_count[i];
-				fprintf(fpout,"%s,%.4g,",words_array_unique[ nw_unique[i][a] ],perc);
+				fprintf(fpout,",%s,%.4g",words_array_unique[ nw_unique[i][a] ],perc);
 			}
 			fprintf(fpout,"\n");
 		}
 		fclose(fpout);
+		printf("Found %d words | %d uniques | %d maxlength of a word.\n",total_words,u,max_word_length);
 	}
 	return 0;
 }
