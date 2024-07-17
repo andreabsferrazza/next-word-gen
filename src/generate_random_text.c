@@ -88,6 +88,8 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 	int next_words_indexes[total_words][total_words];
 	char next_words_probability[total_words][total_words][6];
 	int next_words_counter[total_words];
+	char punctuation_indexes[3];
+	int pi=0;
 	initialize_to(next_words_counter,total_words,0);
 	FILE *file;
 	if ((file=fopen(filename,"r"))==NULL) {
@@ -132,6 +134,10 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 		if( (c>='a' && c<='z') || (c>='0' && c<='9') || c=='\'' || c=='?' || c=='!' || c=='.'){
 			if(word_identifier==0){
 				dictionary[words][n] = c;
+				if(c=='?' || c=='!' || c=='.'){
+					punctuation_indexes[pi] = words;
+					pi++;
+				}
 			}
 			if(word_identifier>0){
 				// in the odd position between commas there are the
@@ -171,13 +177,22 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 	}
  */
 	// ###################### 3. now we determine the first word
+
+	// printf("First word = %s\n",dictionary[first_word_index]);
+	char* filename_out = "output_text.txt";
+	FILE *fpout;
+	if ((fpout=fopen(filename_out,"wt"))==NULL) {
+		printf("Wrong output file name");
+		exit(1);
+	}
+
 	int first_word_index = 0;
 	char * fw = (char*) first_word;
 	srand(time(NULL));   // Init
-	first_word_index = 0 + rand() / (RAND_MAX / (total_words-1 + 1) + 1);
+	// first_word_index = 0 + rand() / (RAND_MAX / (total_words-1 + 1) + 1);
 	// printf("%d\n",random_index);
+	int found=0;
 	if( compare_words(fw," ")==0){
-		int found=0;
 		for(int i=0;i<total_words;i++){
 			int check = compare_words(dictionary[i],fw);
 			if(check>0){
@@ -186,39 +201,55 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 				break;
 			}
 		}
-		if(found==0){
-			printf("%s not found in dictionary, randomizing another one...\n",fw);
-		}
 	}
-	fw = dictionary[first_word_index];
-	fw[0] = fw[0]-32;
-	// printf("First word = %s\n",dictionary[first_word_index]);
-
-	char* filename_out = "output_text.txt";
-	FILE *fpout;
-	if ((fpout=fopen(filename_out,"wt"))==NULL) {
-		printf("Wrong output file name");
-		exit(1);
+	int consider_first_print = 0;
+	if(found==0){
+		// printf("%s not found in dictionary, randomizing another one...\n",fw);
+		int punctuation = 0 + rand() / (RAND_MAX / (2 + 1) + 1);
+		// printf("%s\n",dictionary[ punctuation_indexes[punctuation] ]);
+		first_word_index = punctuation_indexes[punctuation];
+	}else{
+		fw = dictionary[first_word_index];
+		fw[0] = fw[0]-32;
+		fprintf(fpout,"%s",fw);
+		consider_first_print = 1;
 	}
-
 	int last_index = first_word_index;
-	fprintf(fpout,"%s",fw);
 
-	for(int w=0;w<words_number-1;w++){
+	for(int w=0;w<words_number-consider_first_print;w++){
 		int random_needle = (rand() % (10000 - 0 + 1)) + 0;
 		int min_step = 0;
-		for(int j=0;j<next_words_counter[last_index];j++){
 
-			if(j==next_words_counter[last_index]-1){
-				fprintf(fpout," %s:%d",next_words[last_index][j],last_index);
-				last_index = next_words_indexes[last_index][j];
-				break;
+		int last_was_punctuation=0;
+		for(int p=0;p<3;p++){
+			if(punctuation_indexes[p]==last_index){
+				last_was_punctuation=1;
 			}
-
+		}
+		if(w>0 || found==1){
+			fprintf(fpout," ");
+		}
+		for(int j=0;j<next_words_counter[last_index];j++){
 			float current_step = ( atof( next_words_probability[last_index][j] ) * 10000) + min_step;
-			if(random_needle>=min_step && random_needle<current_step){
-				fprintf(fpout," %s:%d",next_words[last_index][j],last_index);
-				last_index = next_words_indexes[last_index][j];
+			if( (j==next_words_counter[last_index]-1) ||
+				(random_needle>=min_step && random_needle<current_step)
+			){
+				int new_index = next_words_indexes[last_index][j];
+
+				if(last_was_punctuation==1 || (w==0 && found==0) ){
+					int z=0;
+					do{
+						if(z==0 && dictionary[ new_index ][z]>='a' && dictionary[ new_index ][z]<='z'){
+							fprintf(fpout,"%c", dictionary[ new_index ][z]-32);
+						}else{
+							fprintf(fpout,"%c", dictionary[ new_index ][z]);
+						}
+						z++;
+					}while(dictionary[ new_index ][z]!='\0');
+				}else{
+					fprintf(fpout,"%s",dictionary[ new_index ]);
+				}
+				last_index = new_index;
 				break;
 			}
 			min_step = current_step;
@@ -226,6 +257,7 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 		/* float next_word_index = 0 + (float) rand() / (RAND_MAX / (1 + 1) );
 		printf("%f\n",next_word_index); */
 	}
+	fprintf(fpout,"\n");
 	fclose(fpout);
 	return 0;
 }
