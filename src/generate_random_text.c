@@ -6,37 +6,25 @@ struct ptable_info{
 	int total_words;
 };
 
-int generate_random_text(const char* fn, int nw, const char * fw){
-	printf("%s\n",fn);
-	printf("%d\n",nw);
-	printf("%s\n",fw);
-	// we start parsing the input file
-	FILE *file;
-	// check if fn is ok
-	printf("%s\n",fn);
-	if ((file=fopen(fn,"r"))==NULL) {
-		printf("Wrong input file name\n");
-		exit(1);
-	}
-	// unique words
-	// probability
-	// next word counter
-		
-	int max_word_length = 0;
-	int total_words = 0;
-	// struct ptable_info di; 
+struct ptable_info scan_dictionary(const char* filename){
 	int c;
 	int n=0;
 	int word_identifier=0;
+	int max_word_length = 6; // a probability may have six digits 
+	int total_words = 0;
+	struct ptable_info pti;
+	FILE *file;
+	if ((file=fopen(filename,"r"))==NULL) {
+		printf("Wrong input file name\n");
+		exit(1);
+	}
 	do{
 		c=fgetc(file);
-		// se abbiamo già incontrato un carattere che non sia EOF o uno spazio
-		// AND il carattere corrente è EOF o uno spazio
-		printf("%c",c);
+		// if we already encountered a character (n==0) that is not the EOF, '\n' or ',' 
+		// and the current character IS the EOF, '\n' or ','
 		if(n>0 && (c==',' || c=='\n' || c==EOF)){
-			// abbiamo quindi trovato una parola
+			// we have found a word
 			if(word_identifier==0){
-				// Calcolo massima lunghezza di una parola
 				if(n>max_word_length ){
 					max_word_length=n;
 				}
@@ -51,15 +39,101 @@ int generate_random_text(const char* fn, int nw, const char * fw){
 			// printf("%d\n\n",word_identifier);
 			continue;
 		}
-		// se il carattere corrente c è tra quelli che possono comporre una parola
+		// if the current character is a valid one
 		if( (c>='a' && c<='z') || (c>='0' && c<='9') || c=='\'' || c=='?' || c=='!' || c=='.'){
-			// contiamo con il contatore n il numero di lettere della parola che stiamo leggendo
+			// number of letters of the currend word
 			n++;
 		}
 	}while (c != EOF);
 	fclose(file);
-	/* di.max_word_length = max_word_length;
-	di.total_words= total_words; */
+	pti.total_words = total_words;
+	pti.max_word_length = max_word_length;
+	return pti;
+}
+
+int copy_string(char* src, char* dest){
+	int z=0;
+	do{
+		dest[z]=src[z];
+		z++;
+	}while(src[z]!='\0');
+	dest[z++]='\0';
+	return 0;
+}
+int generate_random_text(const char* filename, int words_number, const char * first_word){
+	// ###################### 1. we scan the file to determine the max_word_length and the total_words in the dictionary
+	struct ptable_info pti; 
+	pti = scan_dictionary(filename);
+	int max_word_length = pti.max_word_length;
+	int total_words = pti.total_words;
+
+	if(max_word_length==0 || total_words==0){
+		exit(1);
+	}
 	printf("mwl: %d | tw: %d\n",max_word_length,total_words);
+
+	// ###################### 2. we parse the csv
+	int c;
+	int words=0,next_word_count=0,n=0;
+	int word_identifier=0;
+	char dictionary[total_words][max_word_length+1];
+	char next_words[total_words][total_words+1][max_word_length+1];
+	char next_words_probability[total_words][total_words][6];
+	FILE *file;
+	if ((file=fopen(filename,"r"))==NULL) {
+		printf("Wrong input file name\n");
+		exit(1);
+	}
+	do{
+		c=fgetc(file);
+		// if we already encountered a character (n==0) that is not the EOF, '\n' or ',' 
+		// and the current character IS the EOF, '\n' or ','
+		if(n>0 && (c==',' || c=='\n' || c==EOF)){
+			// we have found a word
+			if(word_identifier==0){
+				dictionary[words][n]='\0';
+				printf("%s\n",dictionary[words]);
+			}
+			if(word_identifier>0){
+				// in the even position between commas there are the
+				// next words of "word"
+				if(word_identifier%2==0){
+					next_words[words][next_word_count][n]='\0';
+					printf("%s = ",next_words[words][next_word_count]);
+				}else{
+					next_words_probability[words][next_word_count][n]='\0';
+					printf("%s |",next_words_probability[words][next_word_count]);
+					next_word_count++;
+				}
+			}
+			if(c=='\n'){
+				word_identifier=0;
+				words++;
+				printf("\n");
+			}else{
+				word_identifier++;
+			}
+			// printf("%d\n\n",word_identifier);
+			n=0;
+			continue;
+		}
+		// if the current character is a valid one
+		if( (c>='a' && c<='z') || (c>='0' && c<='9') || c=='\'' || c=='?' || c=='!' || c=='.'){
+			if(word_identifier==0){
+				dictionary[words][n] = c;
+			}
+			if(word_identifier>0){
+				// in the even position between commas there are the
+				// next words of "word"
+				if(word_identifier%2==0){
+					next_words[words][next_word_count][n]=c;
+				}else{
+					next_words_probability[words][next_word_count][n]=c;
+				}
+			}
+			// number of letters of the currend word
+			n++;
+		}
+	}while (c != EOF);
 	return 0;
 }
