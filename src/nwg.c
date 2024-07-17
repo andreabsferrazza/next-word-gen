@@ -47,7 +47,7 @@ int main(int argc, char *argv[]){
 		goto exit;
 	}
 
-	if (generate_random_text_opt->count > 0 && file->count==1 && create_dictionary_opt->count==0){
+	if (generate_random_text_opt->count > 0 && file->count==1 && create_dictionary_opt->count==0 && words_number->count>0){
 		const char* fn = file->filename[0];
 		int nw = words_number->ival[0];
 		if(first_word->count==1){
