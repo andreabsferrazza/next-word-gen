@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "functions.h"
 
 struct ptable_info{
 	int max_word_length;
@@ -74,11 +75,13 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 
 	// ###################### 2. we parse the csv
 	int c;
-	int words=0,next_word_count=0,n=0;
+	int words=0,n=0;
 	int word_identifier=0;
 	char dictionary[total_words][max_word_length+1];
 	char next_words[total_words][total_words+1][max_word_length+1];
 	char next_words_probability[total_words][total_words][6];
+	int next_words_counter[total_words];
+	initialize_to(next_words_counter,total_words,0);
 	FILE *file;
 	if ((file=fopen(filename,"r"))==NULL) {
 		printf("Wrong input file name\n");
@@ -95,15 +98,16 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 				printf("%s\n",dictionary[words]);
 			}
 			if(word_identifier>0){
-				// in the even position between commas there are the
+				// in the odd positions between commas there are the
 				// next words of "word"
-				if(word_identifier%2==0){
-					next_words[words][next_word_count][n]='\0';
-					printf("%s = ",next_words[words][next_word_count]);
+				if(word_identifier%2==1){
+					next_words[words][ next_words_counter[words] ][n]='\0';
+					// printf("%d %s parola ###\n ",word_identifier,next_words[words][ next_words_counter[words] ]);
 				}else{
-					next_words_probability[words][next_word_count][n]='\0';
-					printf("%s |",next_words_probability[words][next_word_count]);
-					next_word_count++;
+				// ... and in the even positions the probability
+					next_words_probability[words][ next_words_counter[words] ][n]='\0';
+					// printf("%s |",next_words_probability[words][ next_words_counter[words] ]);
+					next_words_counter[words]++;
 				}
 			}
 			if(c=='\n'){
@@ -123,17 +127,26 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 				dictionary[words][n] = c;
 			}
 			if(word_identifier>0){
-				// in the even position between commas there are the
+				// in the odd position between commas there are the
 				// next words of "word"
-				if(word_identifier%2==0){
-					next_words[words][next_word_count][n]=c;
+				if(word_identifier%2==1){
+					next_words[words][ next_words_counter[words] ][n]=c;
 				}else{
-					next_words_probability[words][next_word_count][n]=c;
+				// ... and in the even positions the probability
+					next_words_probability[words][ next_words_counter[words] ][n]=c;
 				}
 			}
 			// number of letters of the currend word
 			n++;
 		}
 	}while (c != EOF);
+	fclose(file);
+	for(int i=0;i<total_words;i++){
+		printf("%s ",dictionary[i]);
+		for(int j=0;j<next_words_counter[i];j++){
+			printf(", %s = %s",next_words[i][j],next_words_probability[i][j]);
+		}
+		printf("\n");
+	}
 	return 0;
 }

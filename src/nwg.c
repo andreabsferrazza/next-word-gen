@@ -1,6 +1,7 @@
 #include "../lib/argtable3.h"
 #include "create_dictionary.c"
 #include "generate_random_text.c"
+#include "functions.c"
 
 /* global arg_xxx structs */
 struct arg_lit *create_dictionary_opt, *generate_random_text_opt, *help, *version;
