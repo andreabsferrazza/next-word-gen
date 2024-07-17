@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "functions.h"
 
 struct ptable_info{
@@ -95,7 +96,7 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 			// we have found a word
 			if(word_identifier==0){
 				dictionary[words][n]='\0';
-				printf("%s\n",dictionary[words]);
+				// printf("%s\n",dictionary[words]);
 			}
 			if(word_identifier>0){
 				// in the odd positions between commas there are the
@@ -113,7 +114,7 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 			if(c=='\n'){
 				word_identifier=0;
 				words++;
-				printf("\n");
+				// printf("\n");
 			}else{
 				word_identifier++;
 			}
@@ -141,12 +142,34 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 		}
 	}while (c != EOF);
 	fclose(file);
-	for(int i=0;i<total_words;i++){
+
+	// ###################### 3. now we determine the first word
+	int first_word_index = 0;
+	char * fw = (char*) first_word;
+	srand(time(NULL));   // Init
+	first_word_index = 0 + rand() / (RAND_MAX / (total_words-1 + 1) + 1);
+	// printf("%d\n",random_index);
+	if( compare_words(fw," ")==0){
+		int found=0;
+		for(int i=0;i<total_words;i++){
+			int check = compare_words(dictionary[i],fw);
+			if(check>0){
+				found=1;
+				first_word_index=i;
+				break;
+			}
+		}
+		if(found==0){
+			printf("%s not found in dictionary, randomizing another one...\n",fw);
+		}
+	}
+	printf("First word = %s\n",dictionary[first_word_index]);
+/* 	for(int i=0;i<total_words;i++){
 		printf("%s ",dictionary[i]);
 		for(int j=0;j<next_words_counter[i];j++){
 			printf(", %s = %s",next_words[i][j],next_words_probability[i][j]);
 		}
 		printf("\n");
-	}
+	} */
 	return 0;
 }
