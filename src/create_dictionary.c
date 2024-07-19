@@ -96,6 +96,12 @@ int create_dictionary(const char * filename){
 			// we chose to alloc 10 elements so we limit the number of realloc
 			next_words[i] = malloc( sizeof(int) * 10);
 		}
+		int ** frequence;
+		frequence = malloc( sizeof(int*) * total_words);
+		for(int i=0;i<total_words;i++){
+			// we chose to alloc 10 elements so we limit the number of realloc
+			frequence[i] = calloc(0, sizeof(int) * 10);
+		}
 		// int next_words_count[total_words];
 		int * next_words_count;
 		next_words_count = calloc(total_words, sizeof(int));
@@ -155,29 +161,51 @@ int create_dictionary(const char * filename){
 						// if yes we have to update its frequence
 						// if no we must store it and update its frequence
 						
-						// if it is not the first next_word of the last_word we need more space
-						if(sizeof(next_words[ last_word_index ]) <= next_words_count[ last_word_index ]){
-							// printf("%d\n",words);
-							// printf("%s\n",dictionary[ words-1 ]);
-							int next_size =  next_words_count[ last_word_index ] + 1;
-							// int next_size = next_words_count[ last_word_index ] + 1;
-							// printf("realloc next_words. Next size %ld - Previous size %ld \n",sizeof(int) * next_size,sizeof(int) * sizeof(next_words[ last_word_index ]));
-							int * res = realloc(next_words[ last_word_index ], sizeof(int) * next_size);
-							// printf("realloc next words\n");
-							if(res==NULL){
-								printf("Realloc failed\n");
-								for(int i=0;i<total_words;i++){
-									free(next_words[i]);
-								}
-								free(next_words);
-								free(current_word);
-								free(next_words_count);
-								exit(1);
+						int check=0;
+						int current_nw_index=next_words_count[ last_word_index ];
+						for(int nw=0;nw<next_words_count[ last_word_index ];nw++){
+							if(next_words[ last_word_index ][nw]==current_index){
+								check++;
 							}
-							next_words[ last_word_index ] = res;
+							if(check>0){
+								// we found the word, we take the index
+								current_nw_index = nw;
+								break;
+							}
+
 						}
-						next_words[ last_word_index ][ next_words_count[ last_word_index ] ] = current_index;
-						next_words_count[ last_word_index ]++;
+						if(check==0){
+						// if it is not the first next_word of the last_word we need more space
+							if(sizeof(next_words[ last_word_index ]) <= next_words_count[ last_word_index ]){
+								// printf("%d\n",words);
+								// printf("%s\n",dictionary[ words-1 ]);
+								int next_size =  next_words_count[ last_word_index ] + 1;
+								int * new_next_word = realloc(next_words[ last_word_index ], sizeof(int) * next_size);
+								// int * new_frequence = realloc(frequence[ last_word_index ], sizeof(int) * next_size);
+								// printf("realloc next words\n");
+								if(new_next_word==NULL){
+								// if(new_next_word==NULL || new_frequence==NULL){
+									printf("Realloc failed\n");
+									for(int i=0;i<total_words;i++){
+										free(next_words[i]);
+									}
+									for(int i=0;i<total_words;i++){
+										free(frequence[i]);
+									}
+									free(frequence);
+									free(next_words);
+									free(current_word);
+									free(next_words_count);
+									exit(1);
+								}
+								next_words[ last_word_index ] = new_next_word;
+								// frequence[ last_word_index ] = new_frequence;
+							}
+							next_words[ last_word_index ][ next_words_count[ last_word_index ] ] = current_index;
+							// frequence[ last_word_index ][ next_words_count[ last_
+							next_words_count[ last_word_index ]++;
+						}
+						// frequence[ last_word_index ][ current_nw_index ] ++;
 					}
 					last_word_index = current_index;
 					// printf("%d - %s\n",current_index,dictionary[current_index]);
@@ -210,8 +238,12 @@ int create_dictionary(const char * filename){
 		for(int i=0;i<total_words;i++){
 			free(next_words[i]);
 		}
-		free(current_word);
 		free(next_words);
+		for(int i=0;i<total_words;i++){
+			free(frequence[i]);
+		}
+		free(frequence);
+		free(current_word);
 		free(next_words_count);
 		fclose(file_catcher);
 
