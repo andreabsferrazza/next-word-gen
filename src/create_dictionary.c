@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "functions.h"
+#include <locale.h>
+#include <wchar.h>
 
 struct dictionary_info{
 	int max_word_length;
@@ -14,7 +16,7 @@ struct dictionary_info scan_words(const char * filename){
 	int n=0;
 	FILE *file;
 	// check if filename is ok
-	printf("%s\n",filename);
+	// printf("%s\n",filename);
 	if ((file=fopen(filename,"r"))==NULL) {
 		printf("Wrong input file name\n");
 		exit(1);
@@ -28,6 +30,7 @@ struct dictionary_info scan_words(const char * filename){
 	}
 	do{
 		c=fgetc(file);
+			// printf("%d\n",c);
 		// se abbiamo già incontrato un carattere che non sia EOF o uno spazio
 		// AND il carattere corrente è EOF o uno spazio
 		if(n>0 && (c==' ' || c==EOF)){
@@ -41,7 +44,7 @@ struct dictionary_info scan_words(const char * filename){
 			continue;
 		}
 		// se il carattere corrente c è tra ?!. 
-		if(c=='?' || c=='!' || c=='.'){
+		if(c=='?' || c=='!' || c=='.' || c=='\n'){
 			// se n>0 abbiamo già trovato un carattere che fa parte di una parola
 			// dobbiamo quindi registrare la parola in "sospeso" e poi memorizzare c
 			if(n>0){
@@ -56,6 +59,13 @@ struct dictionary_info scan_words(const char * filename){
 			}
 			n=0;
 			continue;
+		}
+		if(c==195){
+			n++;
+		}
+		if(c==160  || c==168 || c==169 || c==172 || c==178 || c==185 ||
+			c==128 || c==136 || c==137 || c==140 || c==146 || c==153){
+			n++;
 		}
 		// se il carattere corrente c è tra quelli che possono comporre una parola
 		if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='\''){
@@ -82,10 +92,26 @@ int create_dictionary(const char * filename){
 	di = scan_words(filename);
 
 	if(di.total_words>0 && di.max_word_length>0){
+		// setlocale(LC_ALL, "C.UTF-8");
+		/* wchar_t ch;
+		setlocale(LC_ALL, "C.UTF-8");
+		wchar_t chx[3];
+		chx[0] = 0xC9;
+		chx[1] = 'c';
+		chx[2] = '\0';
+		printf("\nCarattere = %ls\n",chx);
+		exit(1);
 		
+		for(int i=240;i<300;i++){
+			wchar_t ix[1];
+			ix[0]= i;
+			printf("%c - %d => %ls\n",ix,ix);
+		}
+		exit(1); */
 		FILE *file_catcher = fopen(filename, "r");
 		int total_words = di.total_words; // computed number of words
 		int max_word_length = di.max_word_length; // max length possible of a word
+		printf("tw %d - mwl %d\n",total_words,max_word_length);
 		// array for the words in the text 
 		// we add +1 to the max_word_length because we use '\0' as string's last character
 		char dictionary[total_words][max_word_length+1];
@@ -102,17 +128,20 @@ int create_dictionary(const char * filename){
 			// we chose to alloc 10 elements so we limit the number of realloc
 			frequence[i] = calloc(0, sizeof(int) * 10);
 		}
-		// int next_words_count[total_words];
-		int * next_words_count;
-		next_words_count = calloc(total_words, sizeof(int));
+		// int next_words_unique_count[total_words];
+		int * next_words_unique_count;
+		next_words_unique_count = calloc(total_words, sizeof(int));
+		int * next_words_total_count;
+		next_words_total_count = calloc(total_words, sizeof(int));
 		char * current_word = NULL;
-		current_word = (char*) malloc((max_word_length+1)*sizeof(char));
+		current_word = (char*) malloc(2*(max_word_length+1)*sizeof(char));
 		// words is the counter for the words, n for the letters in a word
 		int words=0, n=0;
 		int last_word_index=0;
 		do{
 			// we scan each character of the file until the end of the file (EOF)
 			c=fgetc(file_catcher);
+				// printf("%d\n",c);
 			// if n>0 means that we have already begun to write a word
 			// so we terminate it with \0, we set n=0 for the next word and words++
 			// and we skip to the next iteration of the while
@@ -135,7 +164,8 @@ int create_dictionary(const char * filename){
 					// we determine if the world is already in the dictionary
 					int check=0;
 					for(int w=0;w<words;w++){
-						check = compare_words(dictionary[w],current_word);
+						// printf("%s\n",current_word);
+						check = compare_words(dictionary[w], current_word);
 						if(check>0){
 							// we found the word, we take the index
 							current_index = w;
@@ -162,8 +192,8 @@ int create_dictionary(const char * filename){
 						// if no we must store it and update its frequence
 						
 						int check=0;
-						int current_nw_index=next_words_count[ last_word_index ];
-						for(int nw=0;nw<next_words_count[ last_word_index ];nw++){
+						int current_nw_index=next_words_unique_count[ last_word_index ];
+						for(int nw=0;nw<next_words_unique_count[ last_word_index ];nw++){
 							if(next_words[ last_word_index ][nw]==current_index){
 								check++;
 							}
@@ -176,10 +206,12 @@ int create_dictionary(const char * filename){
 						}
 						if(check==0){
 						// if it is not the first next_word of the last_word we need more space
-							if(sizeof(next_words[ last_word_index ]) <= next_words_count[ last_word_index ]){
+							if(sizeof(next_words[ last_word_index ]) <= next_words_unique_count[ last_word_index ]){
+							// if(1>0){
+								// TODO: correggere l'if
 								// printf("%d\n",words);
 								// printf("%s\n",dictionary[ words-1 ]);
-								int next_size =  next_words_count[ last_word_index ] + 1;
+								int next_size =  next_words_unique_count[ last_word_index ] + 1;
 								int * new_next_word = realloc(next_words[ last_word_index ], sizeof(int) * next_size);
 								// int * new_frequence = realloc(frequence[ last_word_index ], sizeof(int) * next_size);
 								// printf("realloc next words\n");
@@ -195,15 +227,15 @@ int create_dictionary(const char * filename){
 									free(frequence);
 									free(next_words);
 									free(current_word);
-									free(next_words_count);
+									free(next_words_unique_count);
 									exit(1);
 								}
 								next_words[ last_word_index ] = new_next_word;
 								// frequence[ last_word_index ] = new_frequence;
 							}
-							next_words[ last_word_index ][ next_words_count[ last_word_index ] ] = current_index;
-							// frequence[ last_word_index ][ next_words_count[ last_
-							next_words_count[ last_word_index ]++;
+							next_words[ last_word_index ][ next_words_unique_count[ last_word_index ] ] = current_index;
+							// frequence[ last_word_index ][ next_words_unique_count[ last_
+							next_words_unique_count[ last_word_index ]++;
 						}
 						// frequence[ last_word_index ][ current_nw_index ] ++;
 					}
@@ -212,8 +244,25 @@ int create_dictionary(const char * filename){
 				}
 				continue;
 			}
+			// 160,168,169,172,178,185,128,136,137,140,146,153
+			if(c==195){
+				// printf("%d n=%d\n",c,n);
+				current_word[n] = (char) c;
+				n++;
+				c=fgetc(file_catcher);
+
+				if(c==160  || c==168 || c==169 || c==172 || c==178 || c==185 ||
+       					c==128 || c==136 || c==137 || c==140 || c==146 || c==153){
+					// printf("%d ifnext=%d\n",c,n);
+					current_word[n] = (char) c;
+					n++;
+					continue;
+				}
+			}
 			// if c is a "valid" character we put it in the dictionary
 			if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='\''){
+				// printf("%c - %d\n",c,c);
+				
 				// we consider all the upper case letters as lowercase
 				if(c>='A' && c<='Z'){
 					c+=32;
@@ -222,14 +271,15 @@ int create_dictionary(const char * filename){
 				n++;
 			}
 		}while (c != EOF);
-		// TODO
 		// we must set here the first word as the next of the last
-		
+		next_words[words-1][0] = 0;
+		next_words_unique_count[words-1]++;
+
 		// #### Print
 		printf("Inizio stampa del dizionario\n");
 		for(int w=0; w<words; w++){
-			printf("%s ===> ",dictionary[w]);
-			for(int j=0;j<next_words_count[w];j++){
+			printf("%s ===> ", dictionary[w]);
+			for(int j=0;j<next_words_unique_count[w];j++){
 				printf(" %d ",next_words[w][j]);
 			}
 			printf("\n");
@@ -244,11 +294,10 @@ int create_dictionary(const char * filename){
 		}
 		free(frequence);
 		free(current_word);
-		free(next_words_count);
+		free(next_words_unique_count);
 		fclose(file_catcher);
 
 		printf("%d uniques\n",words);
-		printf("End on line 154\n");
 		exit(1);
 		// ############ 4. Compute frequences
 		// we need to have unique next words
@@ -263,7 +312,7 @@ int create_dictionary(const char * filename){
 		// for each unique word
 		for(int i=0;i<u;i++){
 			// for each next word of the unique word i
-			for(int j=0;j<next_words_count[i];j++){
+			for(int j=0;j<next_words_unique_count[i];j++){
 				// nw_frequence[i][j]=1;
 				// for each unique next word
 				int new_next_word=1;
@@ -291,7 +340,7 @@ int create_dictionary(const char * filename){
 		for(int i=0;i<u;i++){
 			fprintf(fpout,"%s",dictionary[i]);
 			for(int a=0;a<nw_unique_count[i];a++){
-				float perc=(float) nw_frequence[i][a]/ (float) next_words_count[i];
+				float perc=(float) nw_frequence[i][a]/ (float) next_words_unique_count[i];
 				fprintf(fpout,",%s,%.4g",dictionary[ nw_unique[i][a] ],perc);
 			}
 			fprintf(fpout,"\n");
