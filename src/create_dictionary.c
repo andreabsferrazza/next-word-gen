@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "functions.h"
-#include <locale.h>
-#include <wchar.h>
 
 struct dictionary_info{
 	int max_word_length;
@@ -33,7 +31,7 @@ struct dictionary_info scan_words(const char * filename){
 			// printf("%d\n",c);
 		// se abbiamo già incontrato un carattere che non sia EOF o uno spazio
 		// AND il carattere corrente è EOF o uno spazio
-		if(n>0 && (c==' ' || c==EOF)){
+		if(n>0 && (c==' ' || c==EOF || c=='\n')){
 			// abbiamo quindi trovato una parola
 			total_words++;
 			// Calcolo massima lunghezza di una parola
@@ -44,7 +42,7 @@ struct dictionary_info scan_words(const char * filename){
 			continue;
 		}
 		// se il carattere corrente c è tra ?!. 
-		if(c=='?' || c=='!' || c=='.' || c=='\n'){
+		if(c=='?' || c=='!' || c=='.'){
 			// se n>0 abbiamo già trovato un carattere che fa parte di una parola
 			// dobbiamo quindi registrare la parola in "sospeso" e poi memorizzare c
 			if(n>0){
@@ -60,15 +58,15 @@ struct dictionary_info scan_words(const char * filename){
 			n=0;
 			continue;
 		}
-		if(c==195){
+		/* if(c==195){
 			n++;
 		}
 		if(c==160  || c==168 || c==169 || c==172 || c==178 || c==185 ||
 			c==128 || c==136 || c==137 || c==140 || c==146 || c==153){
 			n++;
-		}
+		} */
 		// se il carattere corrente c è tra quelli che possono comporre una parola
-		if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='\''){
+		if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='\'' || c>160){
 			// contiamo con il contatore n il numero di lettere della parola che stiamo leggendo
 			n++;
 		}
@@ -92,22 +90,6 @@ int create_dictionary(const char * filename){
 	di = scan_words(filename);
 
 	if(di.total_words>0 && di.max_word_length>0){
-		// setlocale(LC_ALL, "C.UTF-8");
-		/* wchar_t ch;
-		setlocale(LC_ALL, "C.UTF-8");
-		wchar_t chx[3];
-		chx[0] = 0xC9;
-		chx[1] = 'c';
-		chx[2] = '\0';
-		printf("\nCarattere = %ls\n",chx);
-		exit(1);
-		
-		for(int i=240;i<300;i++){
-			wchar_t ix[1];
-			ix[0]= i;
-			printf("%c - %d => %ls\n",ix,ix);
-		}
-		exit(1); */
 		FILE *file_catcher = fopen(filename, "r");
 		int total_words = di.total_words; // computed number of words
 		int max_word_length = di.max_word_length; // max length possible of a word
@@ -141,7 +123,7 @@ int create_dictionary(const char * filename){
 		do{
 			// we scan each character of the file until the end of the file (EOF)
 			c=fgetc(file_catcher);
-				// printf("%d\n",c);
+			// printf("%d\n",c);
 			// if n>0 means that we have already begun to write a word
 			// so we terminate it with \0, we set n=0 for the next word and words++
 			// and we skip to the next iteration of the while
@@ -207,10 +189,6 @@ int create_dictionary(const char * filename){
 						if(check==0){
 						// if it is not the first next_word of the last_word we need more space
 							if(sizeof(next_words[ last_word_index ]) <= next_words_unique_count[ last_word_index ]){
-							// if(1>0){
-								// TODO: correggere l'if
-								// printf("%d\n",words);
-								// printf("%s\n",dictionary[ words-1 ]);
 								int next_size =  next_words_unique_count[ last_word_index ] + 1;
 								int * new_next_word = realloc(next_words[ last_word_index ], sizeof(int) * next_size);
 								// int * new_frequence = realloc(frequence[ last_word_index ], sizeof(int) * next_size);
@@ -221,11 +199,11 @@ int create_dictionary(const char * filename){
 									for(int i=0;i<total_words;i++){
 										free(next_words[i]);
 									}
+									free(next_words);
 									for(int i=0;i<total_words;i++){
 										free(frequence[i]);
 									}
 									free(frequence);
-									free(next_words);
 									free(current_word);
 									free(next_words_unique_count);
 									exit(1);
@@ -234,7 +212,7 @@ int create_dictionary(const char * filename){
 								// frequence[ last_word_index ] = new_frequence;
 							}
 							next_words[ last_word_index ][ next_words_unique_count[ last_word_index ] ] = current_index;
-							// frequence[ last_word_index ][ next_words_unique_count[ last_
+							// frequence[ last_word_index ][ next_words_unique_count[ last_word_index ] ] = 0;
 							next_words_unique_count[ last_word_index ]++;
 						}
 						// frequence[ last_word_index ][ current_nw_index ] ++;
