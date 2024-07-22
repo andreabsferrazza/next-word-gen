@@ -51,12 +51,16 @@ int main(int argc, char *argv[]){
 	if (generate_random_text_opt->count > 0 && file->count==1 && create_dictionary_opt->count==0 && words_number->count>0){
 		const char* fn = file->filename[0];
 		int nw = words_number->ival[0];
+		int multiprocess = 0;
+		if(multi_process_opt->count==1){
+			multiprocess=1;
+		}
 		if(first_word->count==1){
 			const char* fw = first_word->sval[0];
-			exitcode = generate_random_text(fn,nw,fw);	
+			exitcode = generate_random_text(fn,nw,fw,multiprocess);	
 		}else{
 			const char* fw = " ";
-			exitcode = generate_random_text(fn,nw,fw);	
+			exitcode = generate_random_text(fn,nw,fw,multiprocess);	
 		}
 	}else if (create_dictionary_opt->count > 0 && file->count==1 && generate_random_text_opt->count==0){
 		const char* fn = file->filename[0];

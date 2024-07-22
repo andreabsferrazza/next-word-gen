@@ -294,7 +294,6 @@ int create_dictionary(const char * filename, int multiprocess){
 		fclose(file_catcher);
 		
 		pid_t pid_write = -1;
-
 		if(mu==1){
 			pid_write = fork();
 		}
