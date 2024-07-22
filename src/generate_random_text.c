@@ -38,11 +38,8 @@ struct ptable_info scan_dictionary(const char* filename){
 				word_identifier++;
 			}
 			n=0;
-			// printf("%d\n\n",word_identifier);
 		}else if(c>0){
-		// if the current character is a valid one
-		// if( (c>='a' && c<='z') || (c>='0' && c<='9') || c=='\'' || c=='?' || c=='!' || c=='.'){
-			// number of letters of the currend word
+			// if the current character is a valid one
 			n++;
 		}
 	}while (c != EOF);
@@ -180,28 +177,19 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 			}
 		}
 	}
-	int consider_first_print = 0;
+	// int consider_first_print = 0;
 	if(found==0){
 		// we have not found the word if submitted (or not)
 		// so we randomize a punctuation
 		int punctuation = 0 + rand() / (RAND_MAX / (2 + 1) + 1);
 		first_word_index = punctuation_indexes[punctuation];
-	}else{
-		// we found the submitted word and we make the first letter uppercase
-		fw = dictionary[first_word_index];
-		if(fw[0]>='a' && fw[0]<='z'){
-			fw[0]-=32;
-		}
-		fprintf(fpout,"%s",fw);
-		// flag for telling the cycle that we already written 1 word
-		consider_first_print = 1;
 	}
 
 	// if no word was found, we would start as we already written a punctuation (but we didn't)
-	// if the ward was found we set it as the last_index (last word)
+	// if the word was found we set it as the last_index (last word)
 	int last_index = first_word_index;
 	// we cycle until we printed all words_number words
-	for(int w=0;w<words_number-consider_first_print;w++){
+	for(int w=0;w<words_number;w++){
 		// we set the needle for the randomization
 		int random_needle = (rand() % (10000 - 0 + 1)) + 0;
 		int min_step = 0;
@@ -214,15 +202,15 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 			}
 		}
 
-		// we write the space after each word
-		if(w>0 || found==1){
+		// we write the space after each word after the first
+		if(w>0){
 			fprintf(fpout," ");
 		}
 
 		// we determine the next_word
 		for(int j=0;j<next_words_counter[last_index];j++){
 			// we incrementally sum the previous probabilities and we check if the needle is in the current range
-			// if it is we set that word as next
+			// if it is we set that word as the next
 			float current_step = ( atof( next_words_probability[last_index][j] ) * 10000) + min_step;
 			if( (j==next_words_counter[last_index]-1) || // if we reached the last "next_word" we pick it
 				(random_needle>=min_step && random_needle<current_step) // we check if the needle is in the current range
@@ -230,7 +218,7 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 				int new_index = next_words_indexes[last_index][j];
 
 				// we check if we need to put the first letter uppercase and then we write the word on the file
-				if(last_was_punctuation==1 || (w==0 && found==0) ){
+				if(last_was_punctuation==1 || w==0){
 					int z=0;
 					do{
 						int c = dictionary[ new_index ][z];
