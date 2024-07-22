@@ -14,20 +14,9 @@ int compare_words(char* a, char* b){
 			check=0;
 			break;
 		}
-		// printf("%d : %c - %d : %c\n",i,a[z],j,b[z]);
 		check++;
 		z++;
 	}
 	if(a[z]!=b[z]) check=0;
 	return check;
 }
-/*
- * This function initialize to an int n all the elements of the array a
- * */
-int initialize_to(int* a, int count, int n){
-	for(int i=0;i<count;i++){
-		a[i]=n;
-	}
-	return 0;
-}
-
