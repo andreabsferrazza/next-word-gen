@@ -11,7 +11,9 @@ to display the help
 To create a file dictionary
 
 ./nwg --create-dictionary --file=[path/to/inputfile]
+
 or
+
 ./nwg -cf [path/to/inputfile]
 
 dictionary.csv will be created in the directory of the program
@@ -20,17 +22,25 @@ dictionary.csv will be created in the directory of the program
 To generate a text from a dictionary
 
 ./nwg --generate_random_text --words_number=[n] --file=[path/to/dictionary]
+
 or
+
 ./nwg -gf path/to/dictionary -w [n]
 
 It is possible to specify a first word with the option first_word
-e.g.
+
 ./nwg --generate_random_text --words_number=[n] --file=[path/to/dictionary] --first_word=[word]
+
 or
+
 ./nwg -gf path/to/dictionary -n [n] -w [word]
 
 Where:
+
 [path/to/inputfile] path of the inputfile
+
 [path/to/dictionary] path to the dictionary
+
 [n] is the number of words desired in the text
+
 [word] is a word specified as first
