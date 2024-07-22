@@ -37,6 +37,21 @@ or
 
 # THE OUTPUT WILL BE WRITTEN IN output.txt
 
+# 2.3. Multiprocess mode
+It is possible to execute the program in multiprocess mode with the option multi_process. If the option is selected the program will execute using 3 processes.
+
+./nwg --generate_random_text --words_number=[n] --file=[path/to/dictionary] --multi_process
+
+./nwg -gmf path/to/dictionary -n [n]
+
+./nwg --generate_random_text --words_number=[n] --file=[path/to/dictionary] --first_word=[word] --multi_process
+
+./nwg -gmf path/to/dictionary -n [n] -w [word]
+
+./nwg --create-dictionary --file=[path/to/inputfile] --multi_process
+
+./nwg -cmf [path/to/inputfile]
+
 # 3. Domains
 
 [path/to/inputfile] string - path of the inputfile
