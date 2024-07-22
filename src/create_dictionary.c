@@ -290,7 +290,7 @@ int create_dictionary(const char * filename){
 		// ##### We free the memory
 		fclose(file_catcher);
 
-		char* filename_out = "output.txt";
+		char* filename_out = "dictionary.txt";
 		FILE *fpout;
 		if ((fpout=fopen(filename_out,"wt"))==NULL) {
 			printf("Wrong output file name");
