@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "functions.h"
 
 struct dictionary_info{
@@ -84,7 +85,7 @@ struct dictionary_info scan_words(const char * filename){
 	return di;
 }
 
-int create_dictionary(const char * filename){
+int create_dictionary(const char * filename, int multiprocess){
 	/*	Each phrase is terminated by . ? ! or EOF 
 	 *	. ? and ! are words
 	 *	every other character sequence between spaces and/or . ? ! is a word
@@ -92,11 +93,21 @@ int create_dictionary(const char * filename){
 	 *	all other characters are ignored except for a-zA-Z'
 	 * */
 
+	int mu = multiprocess;
+
 	struct dictionary_info di;
 	int c;
 	di = scan_words(filename);
 
-	if(di.total_words>0 && di.max_word_length>0){
+	pid_t pid_dictionary=-1;
+
+	if(mu==1){
+		pid_dictionary = fork();
+	}
+
+	if(di.total_words>0 && di.max_word_length>0 && 
+		( pid_dictionary==0 || mu==0) 
+	){
 		/* printf(": = %d %c\n",128,128);
 		exit(1); */
 		FILE *file_catcher = fopen(filename, "r");
@@ -280,53 +291,47 @@ int create_dictionary(const char * filename){
 			}
 		}while (c != EOF);
 		// we must set here the first word as the next of the last
-/* 		next_words[words-1][0] = 0;
-		frequence[words-1][0] = 1;
-		next_words_unique_count[words-1]++; */
-
-		// #### Print
-		/* printf("Inizio stampa del dizionario\n");
-		for(int w=0; w<words; w++){
-			printf("%d:%s ===> ", w, dictionary[w]);
-			for(int j=0;j<next_words_unique_count[w];j++){
-				printf(" %d:%d ",next_words[w][j],frequence[w][j]);
-			}
-			printf("\n");
-		} */
-		// ##### We free the memory
 		fclose(file_catcher);
+		
+		pid_t pid_write = -1;
 
-		char* filename_out = "dictionary.csv";
-		FILE *fpout;
-		if ((fpout=fopen(filename_out,"wt"))==NULL) {
-			printf("Wrong output file name");
-			exit(1);
+		if(mu==1){
+			pid_write = fork();
 		}
 
-		for(int i=0;i<words;i++){
-			fprintf(fpout,"%s",dictionary[i]);
-			float sum=0;
-			for(int a=0;a<next_words_unique_count[i];a++){
-				float perc;
-				if(a< (next_words_unique_count[i]-1) ){
-					perc=(float) frequence[i][a]/ (float) next_words_total_count[i];
-					int conv = (int) ( perc * 10000);
-					perc = (float) conv / 10000;
-					sum+=perc;
-					// printf("%.4g ===> %d => %.4g\n",perc,conv,sum);
-				}else{
-					// if it is the last next_word, we make sure that the sum of all the frequences is 1
-					// this is necessary due to the cut on the 4th decimal digit
-					perc = 1-sum;
-				}
-				// printf("%s ==> perc = %.4g sum = %.4g\n",dictionary[i],perc,sum);
-				fprintf(fpout,",%s,%.4g",dictionary[ next_words[i][a] ],perc);
+		if(pid_write==0 || mu==0){
+			char* filename_out = "dictionary.csv";
+			FILE *fpout;
+			if ((fpout=fopen(filename_out,"wt"))==NULL) {
+				printf("Wrong output file name");
+				exit(1);
 			}
-			fprintf(fpout,"\n");
-		}
-		fclose(fpout);
-		printf("Found %d words | %d uniques.\n",words_in_text,words);
 
+			for(int i=0;i<words;i++){
+				fprintf(fpout,"%s",dictionary[i]);
+				float sum=0;
+				for(int a=0;a<next_words_unique_count[i];a++){
+					float perc;
+					if(a< (next_words_unique_count[i]-1) ){
+						perc=(float) frequence[i][a]/ (float) next_words_total_count[i];
+						int conv = (int) ( perc * 10000);
+						perc = (float) conv / 10000;
+						sum+=perc;
+						// printf("%.4g ===> %d => %.4g\n",perc,conv,sum);
+					}else{
+						// if it is the last next_word, we make sure that the sum of all the frequences is 1
+						// this is necessary due to the cut on the 4th decimal digit
+						perc = 1-sum;
+					}
+					// printf("%s ==> perc = %.4g sum = %.4g\n",dictionary[i],perc,sum);
+					fprintf(fpout,",%s,%.4g",dictionary[ next_words[i][a] ],perc);
+				}
+				fprintf(fpout,"\n");
+			}
+			fclose(fpout);
+		}
+
+		// ##### We free the memory
 		for(int i=0;i<total_words;i++){
 			free(next_words[i]);
 		}
@@ -337,6 +342,14 @@ int create_dictionary(const char * filename){
 		free(frequence);
 		free(current_word);
 		free(next_words_unique_count);
+		if(pid_write<0 && mu==1){
+			printf("Impossible to fork write\n");
+			exit(1);
+		}
+	}
+	if(pid_dictionary<0 && mu==1){
+		printf("Impossible to fork dictionary\n");
+		exit(1);
 	}
 	return 0;
 }

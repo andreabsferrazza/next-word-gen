@@ -4,7 +4,7 @@
 #include "functions.c"
 
 /* global arg_xxx structs */
-struct arg_lit *create_dictionary_opt, *generate_random_text_opt, *help, *version;
+struct arg_lit *create_dictionary_opt, *generate_random_text_opt, *help, *version, *multi_process_opt;
 struct arg_file *o, *file;
 struct arg_int *words_number;
 struct arg_str *first_word;
@@ -16,9 +16,10 @@ int main(int argc, char *argv[]){
 		help    			= arg_litn("h", "help", 0, 1, "display this help and exit\nOptions create_dictionary and generate_random_text must not be contemporary.\n"),
 		create_dictionary_opt		= arg_litn("c", "create_dictionary", 0, 1,"Create dictionary (Requires option --file)"),
 		generate_random_text_opt	= arg_litn("g", "generate_random_text", 0, 1,"Generate random text"),
+		file    			= arg_filen("f", "file", "<file>", 0, 1, "Input file (1)"),
 		words_number			= arg_intn("n", "words_number", "<n>",0,1,"Number of words to randomize"),
 		first_word			= arg_str0("w", "first_word", "<string>", "First word of the text"),
-		file    			= arg_filen("f", "file", "<file>", 0, 1, "Input file (1)"),
+		multi_process_opt		= arg_litn("m", "multi_process", 0, 1,"Multi process mode"),
 		end     			= arg_end(20),
 	};
 
@@ -59,7 +60,11 @@ int main(int argc, char *argv[]){
 		}
 	}else if (create_dictionary_opt->count > 0 && file->count==1 && generate_random_text_opt->count==0){
 		const char* fn = file->filename[0];
-		exitcode = create_dictionary(fn);	
+		int multiprocess = 0;
+		if(multi_process_opt->count==1){
+			multiprocess=1;
+		}
+		exitcode = create_dictionary(fn,multiprocess);	
 	}else{
 		arg_print_errors(stdout, end, progname);
 		printf("Try '%s --help' for more information.\n", progname);
