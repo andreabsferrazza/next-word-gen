@@ -35,12 +35,14 @@ or
 
 ./nwg -gf path/to/dictionary -n [n] -w [word]
 
-Where:
+# THE OUTPUT WILL BE WRITTEN IN output.txt
 
-[path/to/inputfile] path of the inputfile
+# 3. Domains
 
-[path/to/dictionary] path to the dictionary
+[path/to/inputfile] string - path of the inputfile
 
-[n] is the number of words desired in the text
+[path/to/dictionary] string - path to the dictionary
 
-[word] is a word specified as first
+[n] integer - is the number of words desired in the text
+
+[word] string - s a word specified as first
