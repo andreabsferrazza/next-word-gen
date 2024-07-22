@@ -31,7 +31,10 @@ struct dictionary_info scan_words(const char * filename){
 			// printf("%d\n",c);
 		// se abbiamo già incontrato un carattere che non sia EOF o uno spazio
 		// AND il carattere corrente è EOF o uno spazio
-		if(n>0 && (c==' ' || c==EOF || c=='\n')){
+		if(n>0 && (c==' ' || c==EOF || c=='\n' || c=='\'')){
+			if(c=='\''){
+				n++;
+			}
 			// abbiamo quindi trovato una parola
 			total_words++;
 			// Calcolo massima lunghezza di una parola
@@ -66,7 +69,7 @@ struct dictionary_info scan_words(const char * filename){
 			n++;
 		} */
 		// se il carattere corrente c è tra quelli che possono comporre una parola
-		if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='\'' ||
+		if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || //c=='\'' ||
 			c==195 || c==160  || c==168 || c==169 || c==172 || c==178 || c==185 ||
 			c==128 || c==136 || c==137 || c==140 || c==146 || c==153
 
@@ -132,7 +135,10 @@ int create_dictionary(const char * filename){
 			// if n>0 means that we have already begun to write a word
 			// so we terminate it with \0, we set n=0 for the next word and words++
 			// and we skip to the next iteration of the while
-			if( (n>0 && (c==' ' || c=='\n' )) || c==EOF || c=='?' || c=='!' || c=='.'){
+			if( (n>0 && (c==' ' || c=='\n' || c=='\'')) || c==EOF || c=='?' || c=='!' || c=='.'){
+				if(c=='\''){
+					current_word[n++] = c;
+				}
 				// flag for telling if it's the end of the file and we finished
 				int addword = 1;
 				if( c==EOF && n==0 ){
@@ -244,7 +250,7 @@ int create_dictionary(const char * filename){
 					last_word_index = current_index;
 					// printf("%d - %s\n",current_index,dictionary[current_index]);
 				}
-			}else if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='\''
+			}else if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') // || c=='\''
 				|| c==195 
 			){
 				// printf("%d:%c n=%d - %s\n",c,c,n,current_word);
