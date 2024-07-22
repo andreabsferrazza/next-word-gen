@@ -69,9 +69,11 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 
 	pid_t pid_parse = -1;
 	if(mu==1){
+		// if user selected multiprocess we create the second process
 		pid_parse = fork();
 	}
 
+	// if user has not selected multiprocess or this is the child
 	if(mu==0 || pid_parse==0){
 		// ###################### 2. we parse the csv
 		// declarations+initialize
@@ -195,9 +197,11 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 
 		pid_t pid_write = -1;
 		if(mu==1){
+			// if user selected multiprocess we create the third process
 			pid_write = fork();
 		}
 
+		// if user has not selected multiprocess or this is the child
 		if(mu==0 || pid_write==0){
 			// if no word was found, we would start as we already written a punctuation (but we didn't)
 			// if the word was found we set it as the last_index (last word)
@@ -257,11 +261,15 @@ int generate_random_text(const char* filename, int words_number, const char * fi
 			fprintf(fpout,"\n");
 			fclose(fpout);
 		}
+		// ##### We free the memory (in both parent and child process if mu selected)
+		free(next_words_counter);
+		// we check if the second fork failed
 		if(pid_write<0 && mu==1){
 			printf("Impossible to fork write process\n");
 			exit(1);
 		}
 	}
+	// we check if the first fork failed
 	if(pid_parse<0 && mu==1){
 		printf("Impossible to fork parse process\n");
 		exit(1);
