@@ -1,6 +1,8 @@
 # 1. Installation
 make
 
+or in the bin folder there is an executable
+
 # 2. Usage
 ./nwg --help
 or
@@ -61,3 +63,8 @@ It is possible to execute the program in multiprocess mode with the option multi
 [n] integer - is the number of words desired in the text
 
 [word] string - s a word specified as first
+
+# 4. Examples
+
+./nwg -cf test/testo && ./nwg -gf dictionary.csv -n100 && cat output.txt
+./nwg -cmf test/testo2 && ./nwg -gf dictionary.csv -n100 && cat output.txt

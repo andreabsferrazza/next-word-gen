@@ -106,16 +106,12 @@ int create_dictionary(const char * filename, int multiprocess){
 
 	if( pid_dictionary==0 || mu==0){
 		if(di.total_words>0 && di.max_word_length>0){
-			/* printf(": = %d %c\n",128,128);
-		exit(1); */
 			FILE *file_catcher = fopen(filename, "r");
 			int total_words = di.total_words; // computed number of words
 			int max_word_length = di.max_word_length; // max length possible of a word
-			// printf("tw %d - mwl %d\n",total_words,max_word_length);
 			// array for the words in the text 
 			// we add +1 to the max_word_length because we use '\0' as string's last character
 			char dictionary[total_words][max_word_length+1];
-			// int next_words[total_words][10][2];
 			int ** next_words;
 			next_words = malloc( sizeof(int*) * total_words);
 			for(int i=0;i<total_words;i++){
@@ -126,7 +122,6 @@ int create_dictionary(const char * filename, int multiprocess){
 			for(int i=0;i<total_words;i++){
 				frequence[i] = calloc(1, sizeof(int) * 10);
 			}
-			// int next_words_unique_count[total_words];
 			int * next_words_unique_count;
 			next_words_unique_count = calloc(total_words, sizeof(int));
 			int * next_words_total_count;
@@ -139,8 +134,7 @@ int create_dictionary(const char * filename, int multiprocess){
 			do{
 				// we scan each character of the file until the end of the file (EOF)
 				c=fgetc(file_catcher);
-				// if(c=='!')
-				// printf("%d:%c n=%d - %s\n",c,c,n,current_word);
+
 				// if n>0 means that we have already begun to write a word
 				// so we terminate it with \0, we set n=0 for the next word and words++
 				// and we skip to the next iteration of the while
@@ -163,7 +157,7 @@ int create_dictionary(const char * filename, int multiprocess){
 							current_word[n++] = c;
 						}
 					}
-					// if(c=='!') printf("n %d - repeat %d - cw %s\n",n,repeat,current_word);
+					// storing-word block
 					for(int r=0;r<repeat;r++){
 						int current_index = words;
 						if(addword==1){
@@ -178,10 +172,8 @@ int create_dictionary(const char * filename, int multiprocess){
 							// we determine if the world is already in the dictionary
 							int check=0;
 							for(int w=0;w<words;w++){
-								// printf("%s\n",current_word);
 								check = compare_words(dictionary[w], current_word);
 								if(check>0){
-									// printf("Found %s --> %s\n",dictionary[w],current_word);
 									// we found the word, we take the index
 									current_index = w;
 									break;
@@ -190,10 +182,6 @@ int create_dictionary(const char * filename, int multiprocess){
 							// the word is not in the dictionary, so we store it
 							if(check==0){
 								strcpy(dictionary[words], current_word);
-								// printf("%s\n",dictionary[words]);
-								/* free(current_word);
-						current_word = (char*) malloc((max_word_length+1)*sizeof(char)); */
-								// printf("%s\n", dictionary[words]);
 								words++;
 							}
 							// we reset the character counter
@@ -208,7 +196,6 @@ int create_dictionary(const char * filename, int multiprocess){
 							// we check if it is already a next_word of the last_word
 							// if yes we have to update its frequence
 							// if no we must store it and update its frequence
-
 							int check=0;
 							int current_nw_index=next_words_unique_count[ last_word_index ];
 							for(int nw=0;nw<next_words_unique_count[ last_word_index ];nw++){
@@ -223,16 +210,11 @@ int create_dictionary(const char * filename, int multiprocess){
 
 							}
 							if(check==0){
-								// if it is not the first next_word of the last_word we need more space
+								// we need more space 
 								if(sizeof(next_words[ last_word_index ]) <= next_words_unique_count[ last_word_index ]){
 									int next_size =  next_words_unique_count[ last_word_index ] + 1;
 									int * new_next_word = realloc(next_words[ last_word_index ], sizeof(int) * next_size);
 									int * new_frequence = realloc(frequence[ last_word_index ], sizeof(int) * next_size);
-									/* int next_size = ( sizeof( next_words_unique_count[ last_word_index ] ) + 1 ) * sizeof(int);
-								int * new_next_word = realloc(next_words[ last_word_index ], next_size);
-								int * new_frequence = realloc(frequence[ last_word_index ], next_size); */
-									// printf("realloc next words\n");
-									// if(new_next_word==NULL){
 									if(new_next_word==NULL || new_frequence==NULL){
 										printf("Realloc failed\n");
 										for(int i=0;i<total_words;i++){
@@ -257,15 +239,12 @@ int create_dictionary(const char * filename, int multiprocess){
 							frequence[ last_word_index ][ current_nw_index ] ++;
 						}
 						last_word_index = current_index;
-						// printf("%d - %s\n",current_index,dictionary[current_index]);
 					}
 				}else if( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') // || c=='\''
 					|| c==195 
 				){
-					// printf("%d:%c n=%d - %s\n",c,c,n,current_word);
 					// if c is a "valid" character we put it in the dictionary
-					// printf("%c - %d\n",c,c);
-
+					// if we are getting an accented letters we have to catch two bytes
 					if(c==195){
 						int accented_char = c;
 
@@ -316,13 +295,11 @@ int create_dictionary(const char * filename, int multiprocess){
 							int conv = (int) ( perc * 10000);
 							perc = (float) conv / 10000;
 							sum+=perc;
-							// printf("%.4g ===> %d => %.4g\n",perc,conv,sum);
 						}else{
 							// if it is the last next_word, we make sure that the sum of all the frequences is 1
 							// this is necessary due to the cut on the 4th decimal digit
 							perc = 1-sum;
 						}
-						// printf("%s ==> perc = %.4g sum = %.4g\n",dictionary[i],perc,sum);
 						fprintf(fpout,",%s,%.4g",dictionary[ next_words[i][a] ],perc);
 					}
 					fprintf(fpout,"\n");

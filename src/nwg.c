@@ -24,7 +24,7 @@ int main(int argc, char *argv[]){
 	};
 
 	int exitcode = 0;
-	char progname[] = "next-word-gen";
+	char progname[] = "nwg";
 
 	int nerrors;
 	nerrors = arg_parse(argc,argv,argtable);
