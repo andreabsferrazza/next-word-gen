@@ -1,5 +1,6 @@
 test/
-lib/
+lib/argtable3.h
+lib/argtable3.c
 nwg
 output.txt
 dictionary.csv
